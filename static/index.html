@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripGen — Generator Rencana Perjalanan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --surface: #131929;
+      --card: #1a2236;
+      --border: #243050;
+      --accent: #f5a623;
+      --accent2: #e8745a;
+      --text: #e8eaf2;
+      --muted: #7a89a8;
+      --success: #4ecb8d;
+      --gradient: linear-gradient(135deg, #f5a623 0%, #e8745a 100%);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background stars ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(245,166,35,.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 15%, rgba(232,116,90,.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 70%, rgba(78,203,141,.2) 0%, transparent 100%),
+        radial-gradient(600px 600px at 80% 10%, rgba(245,166,35,.04) 0%, transparent 70%),
+        radial-gradient(500px 500px at 10% 80%, rgba(232,116,90,.05) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 3.5rem 0 2.5rem;
+      animation: fadeDown .8s ease both;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(245,166,35,.12);
+      border: 1px solid rgba(245,166,35,.3);
+      color: var(--accent);
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: .35rem .9rem;
+      border-radius: 100px;
+      margin-bottom: 1.2rem;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: .8rem;
+    }
+
+    h1 span {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 300;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ── Form Card ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.2rem;
+      margin-top: 2.5rem;
+      animation: fadeUp .8s .2s ease both;
+    }
+
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .form-title::before {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 1.2rem;
+      background: var(--gradient);
+      border-radius: 2px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    input, select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      padding: .75rem 1rem;
+      width: 100%;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      appearance: none;
+    }
+
+    input::placeholder { color: var(--muted); opacity: .6; }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(245,166,35,.12);
+    }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a89a8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+
+    select option { background: var(--card); }
+
+    /* Budget toggle */
+    .budget-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: .5rem;
+    }
+
+    .budget-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      font-weight: 500;
+      padding: .65rem;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .budget-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .budget-btn.active {
+      background: rgba(245,166,35,.12);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* Submit */
+    .btn-generate {
+      margin-top: 1.5rem;
+      width: 100%;
+      background: var(--gradient);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+      transition: opacity .2s, transform .15s;
+    }
+
+    .btn-generate:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-generate:active { transform: translateY(0); }
+
+    .btn-generate.loading { pointer-events: none; }
+    .btn-generate .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto;
+    }
+    .btn-generate.loading .btn-text { display: none; }
+    .btn-generate.loading .spinner { display: block; }
+
+    /* ── Result Section ── */
+    #result-section { display: none; margin-top: 2.5rem; animation: fadeUp .6s ease both; }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .result-meta {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .meta-pills {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: .75rem;
+      font-weight: 500;
+      padding: .3rem .8rem;
+      color: var(--muted);
+    }
+
+    /* Day cards */
+    .day-cards { display: flex; flex-direction: column; gap: 1.2rem; }
+
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .day-card:hover { border-color: rgba(245,166,35,.3); }
+
+    .day-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.4rem;
+    }
+
+    .day-number {
+      background: var(--gradient);
+      border-radius: 8px;
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      padding: .3rem .7rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .day-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .day-body { padding: 1.2rem 1.4rem; }
+
+    /* Activities */
+    .activities { list-style: none; display: flex; flex-direction: column; gap: .9rem; }
+
+    .activity {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .activity-icon {
+      width: 32px; height: 32px;
+      background: rgba(245,166,35,.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: .1rem;
+    }
+
+    .activity-info { flex: 1; }
+
+    .activity-name {
+      font-weight: 600;
+      font-size: .95rem;
+      margin-bottom: .2rem;
+    }
+
+    .activity-tip {
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.5;
+    }
+
+    .activity-cost {
+      color: var(--success);
+      font-size: .82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      margin-top: .15rem;
+    }
+
+    /* Summary bar */
+    .summary-bar {
+      background: linear-gradient(135deg, rgba(245,166,35,.08), rgba(232,116,90,.08));
+      border: 1px solid rgba(245,166,35,.2);
+      border-radius: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      margin-top: 1.5rem;
+      overflow: hidden;
+    }
+
+    .summary-item {
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .3rem;
+    }
+
+    .summary-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Error */
+    .error-box {
+      background: rgba(232,116,90,.08);
+      border: 1px solid rgba(232,116,90,.3);
+      border-radius: 12px;
+      color: var(--accent2);
+      font-size: .9rem;
+      padding: 1rem 1.2rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(20px);  } to { opacity:1; transform:none; } }
+    @keyframes spin     { to { transform: rotate(360deg); } }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 560px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .summary-bar { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="badge">✈ AI-Powered Travel</div>
+    <h1>Generator Rencana<br><span>Perjalanan Wisata</span></h1>
+    <p class="subtitle">Buat itinerary perjalanan impianmu secara otomatis — destinasi, biaya, dan tips lokal dalam hitungan detik.</p>
+  </header>
+
+  <!-- Form -->
+  <div class="form-card">
+    <div class="form-title">Detail Perjalanan</div>
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>🌏 Kota Tujuan</label>
+        <input type="text" id="destination" placeholder="cth. Bali, Yogyakarta, Raja Ampat…" />
+      </div>
+
+      <div class="form-group">
+        <label>📅 Durasi (Hari)</label>
+        <input type="number" id="duration" min="1" max="30" value="3" />
+      </div>
+
+      <div class="form-group">
+        <label>👥 Jumlah Orang</label>
+        <input type="number" id="people" min="1" max="50" value="2" />
+      </div>
+
+      <div class="form-group full">
+        <label>💰 Anggaran</label>
+        <div class="budget-toggle">
+          <button class="budget-btn active" data-val="murah">🌿 Murah</button>
+          <button class="budget-btn" data-val="sedang">⭐ Sedang</button>
+          <button class="budget-btn" data-val="mewah">💎 Mewah</button>
+        </div>
+        <input type="hidden" id="budget" value="murah" />
+      </div>
+    </div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateTrip()">
+      <span class="btn-text">✨ Generate Itinerary</span>
+      <div class="spinner"></div>
+    </button>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- Result -->
+  <div id="result-section">
+    <div class="result-header">
+      <div class="result-meta" id="resultTitle">—</div>
+      <div class="meta-pills" id="metaPills"></div>
+    </div>
+    <div class="day-cards" id="dayCards"></div>
+    <div class="summary-bar" id="summaryBar"></div>
+  </div>
+
+  <footer>Powered by Claude AI &mdash; Studi Kasus 7 &mdash; Generator Rencana Perjalanan Wisata</footer>
+</div>
+
+<script>
+  /* ── Budget Toggle ── */
+  document.querySelectorAll('.budget-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.budget-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('budget').value = btn.dataset.val;
+    });
+  });
+
+  /* ── Generate Trip ── */
+  async function generateTrip() {
+    const destination = document.getElementById('destination').value.trim();
+    const duration    = parseInt(document.getElementById('duration').value) || 3;
+    const people      = parseInt(document.getElementById('people').value) || 2;
+    const budget      = document.getElementById('budget').value;
+
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'none';
+
+    if (!destination) {
+      errorBox.textContent = '⚠ Masukkan kota tujuan terlebih dahulu.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    btn.classList.add('loading');
+    document.getElementById('result-section').style.display = 'none';
+
+    const prompt = `Kamu adalah travel planner ahli Indonesia. Buat itinerary perjalanan wisata ke "${destination}" selama ${duration} hari untuk ${people} orang dengan anggaran ${budget}.
+
+Balas HANYA dengan JSON valid berikut (tanpa markdown, tanpa penjelasan lain):
+{
+  "destination": "nama kota",
+  "duration_days": ${duration},
+  "people": ${people},
+  "budget": "${budget}",
+  "budget_label": "label anggaran dalam bahasa Indonesia",
+  "total_estimated_cost": "estimasi total biaya dalam Rupiah (format: Rp X.XXX.000)",
+  "currency": "IDR",
+  "days": [
+    {
+      "day": 1,
+      "title": "judul hari singkat",
+      "activities": [
+        {
+          "time": "08:00",
+          "name": "nama aktivitas/destinasi",
+          "icon": "emoji satu karakter",
+          "estimated_cost": "Rp XX.000 / orang",
+          "tip": "tips lokal singkat dan berguna"
+        }
+      ]
+    }
+  ],
+  "local_tips": ["tip 1", "tip 2", "tip 3"]
+}
+
+Isi ${duration} hari dengan 3-4 aktivitas per hari. Gunakan nama tempat nyata di ${destination}. Estimasi biaya sesuai level anggaran ${budget}.`;
+
+    try {
+      const response = await fetch('/trip/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination,
+          duration,
+          people,
+          budget
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Permintaan gagal');
+      }
+      const plan = data.plan;
+      if (!plan || typeof plan !== 'object') {
+        throw new Error('Respons server tidak valid.');
+      }
+
+      renderResult(plan);
+
+    } catch (err) {
+      errorBox.textContent = '❌ ' + (err.message || 'Terjadi kesalahan. Coba lagi.');
+      errorBox.style.display = 'block';
+    } finally {
+      btn.classList.remove('loading');
+    }
+  }
+
+  /* ── Render ── */
+  function renderResult(plan) {
+    document.getElementById('resultTitle').textContent = `🗺 ${plan.destination}`;
+
+    const budgetEmoji = { murah: '🌿', sedang: '⭐', mewah: '💎' };
+    document.getElementById('metaPills').innerHTML = `
+      <span class="pill">📅 ${plan.duration_days} Hari</span>
+      <span class="pill">👥 ${plan.people} Orang</span>
+      <span class="pill">${budgetEmoji[plan.budget] || '💰'} ${plan.budget_label || plan.budget}</span>
+    `;
+
+    const cardsEl = document.getElementById('dayCards');
+    cardsEl.innerHTML = plan.days.map(day => `
+      <div class="day-card">
+        <div class="day-header">
+          <span class="day-number">Hari ${day.day}</span>
+          <span class="day-title">${day.title}</span>
+        </div>
+        <div class="day-body">
+          <ul class="activities">
+            ${(day.activities || []).map(act => `
+              <li class="activity">
+                <div class="activity-icon">${act.icon || '📍'}</div>
+                <div class="activity-info">
+                  <div class="activity-name">${act.time ? `<span style="color:var(--muted);font-size:.8rem;margin-right:.4rem;">${act.time}</span>` : ''}${act.name}</div>
+                  <div class="activity-tip">${act.tip}</div>
+                  <div class="activity-cost">${act.estimated_cost}</div>
+                </div>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('summaryBar').innerHTML = `
+      <div class="summary-item">
+        <div class="summary-label">Total Hari</div>
+        <div class="summary-value">${plan.duration_days} Hari</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Jumlah Orang</div>
+        <div class="summary-value">${plan.people} Orang</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Est. Total Biaya</div>
+        <div class="summary-value" style="font-size:.95rem;">${plan.total_estimated_cost}</div>
+      </div>
+    `;
+
+    const sec = document.getElementById('result-section');
+    sec.style.display = 'block';
+    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html> 
